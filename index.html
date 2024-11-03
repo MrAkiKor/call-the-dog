@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turn-Based Tug of War - Call the Dog Game</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+    }
+    #game-area {
+      margin-top: 20px;
+      width: 80%;
+      height: 100px;
+      border: 2px solid black;
+      position: relative;
+      overflow: hidden;
+      margin: auto;
+    }
+    #dog {
+      position: absolute;
+      left: 50%;
+      bottom: 0;
+      width: 50px;
+      height: 50px;
+      background-color: brown;
+      border-radius: 50%;
+    }
+    #player {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      width: 50px;
+      height: 50px;
+      background-color: blue;
+      border-radius: 50%;
+    }
+    #ai {
+      position: absolute;
+      left: 0;
+      bottom: 0;
+      width: 50px;
+      height: 50px;
+      background-color: red;
+      border-radius: 50%;
+    }
+    #message {
+      margin-top: 10px;
+    }
+    .btn {
+      margin-top: 20px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Turn-Based Tug of War - Call the Dog</h1>
+<p>Press "Call Dog" on your turn to pull the dog closer. The AI will pull in the opposite direction on its turn!</p>
+<div id="game-area">
+  <div id="dog"></div>
+  <div id="player"></div>
+  <div id="ai"></div>
+</div>
+<p id="message">Distance to Player: 50%</p>
+<button id="call-btn" class="btn">Call Dog</button>
+
+<script>
+  const dog = document.getElementById('dog');
+  const message = document.getElementById('message');
+  const callButton = document.getElementById('call-btn');
+  
+  let dogPosition = 50; // Dog starts in the middle at 50%
+  const playerGoal = 90; // Player's win condition (90% to right)
+  const aiGoal = 10; // AI's win condition (10% to left)
+  let playerTurn = true; // Flag to indicate whose turn it is
+
+  // Function to generate a random movement within a range
+  function randomMove(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  // Function to move the dog closer to the player's side
+  function moveDogCloserToPlayer() {
+    const moveAmount = randomMove(4, 8); // Player pulls with random strength between 4% and 8%
+    dogPosition += moveAmount;
+    if (dogPosition > 100) dogPosition = 100; // Limit to 100%
+    updateDogPosition();
+    if (!checkWinCondition()) {
+      playerTurn = false; // End player's turn
+      callButton.disabled = true; // Disable button during AI's turn
+      setTimeout(moveDogCloserToAI, 200); // Wait for AI's turn
+    }
+  }
+
+  // Function to move the dog closer to the AI's side
+  function moveDogCloserToAI() {
+    const moveAmount = randomMove(4, 8); // AI pulls with random strength between 3% and 9%
+    dogPosition -= moveAmount;
+    if (dogPosition < 0) dogPosition = 0; // Limit to 0%
+    updateDogPosition();
+    if (!checkWinCondition()) {
+      playerTurn = true; // End AI's turn, start player's turn
+      callButton.disabled = false; // Enable button for player's turn
+    }
+  }
+
+  // Update the dog's position visually and show remaining distance
+  function updateDogPosition() {
+    dog.style.left = `${dogPosition}%`;
+    const distanceToPlayer = Math.max(0, 100 - dogPosition);
+    message.textContent = `Distance to Player: ${distanceToPlayer}%`;
+  }
+
+  // Check if either player or AI has won
+  function checkWinCondition() {
+    if (dogPosition >= playerGoal) {
+      message.textContent = "The dog reached you! You win!";
+      callButton.disabled = true; // Stop further actions
+      return true;
+    } else if (dogPosition <= aiGoal) {
+      message.textContent = "The AI won! The dog went to the AI!";
+      callButton.disabled = true; // Stop further actions
+      return true;
+    }
+    return false; // Game continues
+  }
+
+  // Player "Call Dog" button click event
+  callButton.addEventListener('click', () => {
+    if (playerTurn) {
+      moveDogCloserToPlayer();
+    }
+  });
+
+</script>
+
+</body>
+</html>
