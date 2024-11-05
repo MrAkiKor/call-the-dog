@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Turn-Based Tug of War - Call the Dog Game</title>
+  <title>Running Game with AI Opponent and Pause Feature</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -12,129 +12,143 @@
     #game-area {
       margin-top: 20px;
       width: 80%;
-      height: 100px;
+      height: 150px;
       border: 2px solid black;
       position: relative;
       overflow: hidden;
       margin: auto;
+      background-color: #faf5f9;
     }
-    #dog {
+
+    .floor {
+      background-color: #5b5b5d;
       position: absolute;
-      left: 50%;
       bottom: 0;
+      width: 100%;
+      height: 33%;
+    }
+    .runner {
+      position: absolute;
+      bottom: 20px;
       width: 50px;
       height: 50px;
-      background-color: brown;
-      border-radius: 50%;
+      background-size: cover;
+      background-repeat: no-repeat;
     }
     #player {
-      position: absolute;
-      right: 0;
-      bottom: 0;
-      width: 50px;
-      height: 50px;
-      background-color: blue;
-      border-radius: 50%;
+      background-image: url('./player2.png');
+      background-position: 0 0px; /* Start with the first frame */
+      left: 0;
+      background-size: 300px;
+      transition: left 0.15s;
     }
     #ai {
-      position: absolute;
-      left: 0;
-      bottom: 0;
-      width: 50px;
-      height: 50px;
       background-color: red;
-      border-radius: 50%;
+      left: 0;
+      bottom: 10px;
     }
-    #message {
+    #instructions {
       margin-top: 10px;
-    }
-    .btn {
-      margin-top: 20px;
-      padding: 10px 20px;
-      font-size: 16px;
-      cursor: pointer;
     }
   </style>
 </head>
 <body>
 
-<h1>Turn-Based Tug of War - Call the Dog</h1>
-<p>Press "Call Dog" on your turn to pull the dog closer. The AI will pull in the opposite direction on its turn!</p>
-<div id="game-area">
-  <div id="dog"></div>
-  <div id="player"></div>
-  <div id="ai"></div>
+<h1>Running Game with AI Opponent and Pause Feature</h1>
+<div id="instructions">
+  Press "J" and "K" alternately to make your runner move forward! Press "P" to pause or resume the game.
 </div>
-<p id="message">Distance to Player: 50%</p>
-<button id="call-btn" class="btn">Call Dog</button>
+<div id="game-area">
+  <div class="floor"></div>
+  <section class="background">
+  </section>
+  <div id="player" class="runner"></div>
+  <div id="ai" class="runner"></div>
+</div>
+<div id="distance">Player Distance: 0% | AI Distance: 0%</div>
 
 <script>
-  const dog = document.getElementById('dog');
-  const message = document.getElementById('message');
-  const callButton = document.getElementById('call-btn');
+  const player = document.getElementById('player');
+  const ai = document.getElementById('ai');
+  const distanceDisplay = document.getElementById('distance');
   
-  let dogPosition = 50; // Dog starts in the middle at 50%
-  const playerGoal = 90; // Player's win condition (90% to right)
-  const aiGoal = 10; // AI's win condition (10% to left)
-  let playerTurn = true; // Flag to indicate whose turn it is
+  let playerDistance = 0;
+  let aiDistance = 0;
+  let lastKey = ''; // Track the last key pressed by the player
+  const goal = 100; // Distance goal to win the game (100%)
+  const aiSpeed = 1.3; // AI moves 0.5% of the game area per interval
+  let isPaused = false; // Game starts unpaused
 
-  // Function to generate a random movement within a range
-  function randomMove(min, max) {
-    return Math.floor(Math.random() * (max - min + 1)) + min;
-  }
+  // Sprite animation settings
+  const spriteWidth = 300 / 5; // Each frame width is 75px (300px / 4 frames)
+  const spriteHeight = 128;    // Height of each frame
+  let currentFrame = 0;        // Current frame in the sprite sheet
+  const frameSpeed = 5;        // Number of key presses between frame changes
 
-  // Function to move the dog closer to the player's side
-  function moveDogCloserToPlayer() {
-    const moveAmount = randomMove(4, 8); // Player pulls with random strength between 4% and 8%
-    dogPosition += moveAmount;
-    if (dogPosition > 100) dogPosition = 100; // Limit to 100%
-    updateDogPosition();
-    if (!checkWinCondition()) {
-      playerTurn = false; // End player's turn
-      callButton.disabled = true; // Disable button during AI's turn
-      setTimeout(moveDogCloserToAI, 200); // Wait for AI's turn
+  // AI running function
+  function aiRun() {
+    if (!isPaused) {
+      aiDistance += aiSpeed;
+      ai.style.left = `${aiDistance}%`;
+      updateDistanceDisplay();
+
+      // Check if AI won
+      if (aiDistance >= goal) {
+        alert('AI won the race!');
+        resetGame();
+      }
     }
   }
+  
+  // Update the distance display
+  function updateDistanceDisplay() {
+    distanceDisplay.textContent = `Player Distance: ${Math.round(playerDistance)}% | AI Distance: ${Math.round(aiDistance)}%`;
+  }
 
-  // Function to move the dog closer to the AI's side
-  function moveDogCloserToAI() {
-    const moveAmount = randomMove(4, 8); // AI pulls with random strength between 3% and 9%
-    dogPosition -= moveAmount;
-    if (dogPosition < 0) dogPosition = 0; // Limit to 0%
-    updateDogPosition();
-    if (!checkWinCondition()) {
-      playerTurn = true; // End AI's turn, start player's turn
-      callButton.disabled = false; // Enable button for player's turn
+  // Reset the game
+  function resetGame() {
+    playerDistance = 0;
+    aiDistance = 0;
+    player.style.left = '0%';
+    ai.style.left = '0%';
+    updateDistanceDisplay();
+    lastKey = '';
+    isPaused = false;
+    currentFrame = 0;
+    player.style.backgroundPosition = '0 0'; // Reset to the first frame of the sprite
+  }
+
+  // Player keydown event listener
+  document.addEventListener('keydown', (event) => {
+    const key = event.key.toLowerCase();
+
+    // Pause/unpause the game with "P"
+    if (key === 'p') {
+      isPaused = !isPaused;
+      return; // Stop further processing if we just toggled pause
     }
-  }
 
-  // Update the dog's position visually and show remaining distance
-  function updateDogPosition() {
-    dog.style.left = `${dogPosition}%`;
-    const distanceToPlayer = Math.max(0, 100 - dogPosition);
-    message.textContent = `Distance to Player: ${distanceToPlayer}%`;
-  }
+    // Only process movement keys if the game is not paused
+    if (!isPaused && ((key === 'j' && lastKey !== 'j') || (key === 'k' && lastKey !== 'k'))) {
+      lastKey = key;
+      playerDistance += 1.2;
+      player.style.left = `${playerDistance}%`; // Update player position
+      updateDistanceDisplay();
 
-  // Check if either player or AI has won
-  function checkWinCondition() {
-    if (dogPosition >= playerGoal) {
-      message.textContent = "The dog reached you! You win!";
-      callButton.disabled = true; // Stop further actions
-      return true;
-    } else if (dogPosition <= aiGoal) {
-      message.textContent = "The AI won! The dog went to the AI!";
-      callButton.disabled = true; // Stop further actions
-      return true;
-    }
-    return false; // Game continues
-  }
+      // Update the animation frame for the player
+      currentFrame = (currentFrame + 1) % 4; // Cycle through frames 0 to 3
+      player.style.backgroundPosition = `-${currentFrame * spriteWidth}px 0px`;
 
-  // Player "Call Dog" button click event
-  callButton.addEventListener('click', () => {
-    if (playerTurn) {
-      moveDogCloserToPlayer();
+      // Check if the player has won
+      if (playerDistance >= goal) {
+        alert('Congratulations! You beat the AI!');
+        resetGame();
+      }
     }
   });
+
+  // Run the AI at a set interval
+  const aiInterval = setInterval(aiRun, 100); // AI moves every 100 milliseconds
 
 </script>
 
