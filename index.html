@@ -8,15 +8,19 @@
     body {
       font-family: Arial, sans-serif;
       text-align: center;
+      overflow-x: hidden; /* Prevent horizontal scrolling */
+    }
+    #game-container {
+      width: 600px; /* Viewport width */
+      overflow: hidden; /* Hide content outside the viewport */
+      position: relative;
+      margin: 0 auto; /* Center the viewport on the page */
     }
     #game-area {
-      margin-top: 20px;
-      width: 80%;
+      width: 1200px; /* Track length */
       height: 150px;
-      border: 2px solid black;
       position: relative;
       overflow: hidden;
-      margin: auto;
       background-color: #faf5f9;
     }
 
@@ -43,7 +47,8 @@
       transition: left 0.15s;
     }
     #ai {
-      background-color: red;
+  
+      background-image: url('./jeccu_test.png');
       left: 0;
       bottom: 10px;
     }
@@ -58,12 +63,14 @@
 <div id="instructions">
   Press "J" and "K" alternately to make your runner move forward! Press "P" to pause or resume the game.
 </div>
-<div id="game-area">
-  <div class="floor"></div>
-  <section class="background">
-  </section>
-  <div id="player" class="runner"></div>
-  <div id="ai" class="runner"></div>
+<div id="game-container">
+  <div id="game-area">
+    <div class="floor"></div>
+    <section class="background">
+    </section>
+    <div id="player" class="runner"></div>
+    <div id="ai" class="runner"></div>
+  </div>
 </div>
 <div id="distance">Player Distance: 0% | AI Distance: 0%</div>
 
@@ -71,25 +78,31 @@
   const player = document.getElementById('player');
   const ai = document.getElementById('ai');
   const distanceDisplay = document.getElementById('distance');
+  const gameArea = document.getElementById('game-area');
+  const gameContainer = document.getElementById('game-container');
   
   let playerDistance = 0;
   let aiDistance = 0;
   let lastKey = ''; // Track the last key pressed by the player
   const goal = 100; // Distance goal to win the game (100%)
-  const aiSpeed = 1.3; // AI moves 0.5% of the game area per interval
+  const aiSpeed = 1.0; // AI moves 1.3% of the game area per interval
   let isPaused = false; // Game starts unpaused
 
   // Sprite animation settings
-  const spriteWidth = 300 / 5; // Each frame width is 75px (300px / 4 frames)
+  const spriteWidth = 300 / 5; 
+  const aiSpriteWidth = 350 / 5; 
   const spriteHeight = 128;    // Height of each frame
   let currentFrame = 0;        // Current frame in the sprite sheet
+  let currentAiFrame = 0;        // Current frame in the sprite sheet
   const frameSpeed = 5;        // Number of key presses between frame changes
 
   // AI running function
   function aiRun() {
     if (!isPaused) {
       aiDistance += aiSpeed;
-      ai.style.left = `${aiDistance}%`;
+      ai.style.left = `${aiDistance * 10.8}px`; // Convert to pixels for 1080px track
+      currentAiFrame = (currentAiFrame + 1) % 5; // Cycle through frames 0 to 3
+      ai.style.backgroundPosition = `-${currentAiFrame * aiSpriteWidth}px 0px`;
       updateDistanceDisplay();
 
       // Check if AI won
@@ -109,13 +122,15 @@
   function resetGame() {
     playerDistance = 0;
     aiDistance = 0;
-    player.style.left = '0%';
-    ai.style.left = '0%';
+    player.style.left = '0px';
+    ai.style.left = '0px';
+    gameArea.style.transform = 'translateX(0px)'; // Reset camera
     updateDistanceDisplay();
     lastKey = '';
     isPaused = false;
     currentFrame = 0;
     player.style.backgroundPosition = '0 0'; // Reset to the first frame of the sprite
+    ai.style.backgroundPosition = '0 0'; // Reset to the first frame of the sprite
   }
 
   // Player keydown event listener
@@ -132,12 +147,18 @@
     if (!isPaused && ((key === 'j' && lastKey !== 'j') || (key === 'k' && lastKey !== 'k'))) {
       lastKey = key;
       playerDistance += 1.2;
-      player.style.left = `${playerDistance}%`; // Update player position
+      player.style.left = `${playerDistance * 10.2}px`; // Update player position in pixels
       updateDistanceDisplay();
 
       // Update the animation frame for the player
       currentFrame = (currentFrame + 1) % 4; // Cycle through frames 0 to 3
       player.style.backgroundPosition = `-${currentFrame * spriteWidth}px 0px`;
+
+      // Move game area to follow the player for camera effect
+      const playerPosition = playerDistance * 10.8;
+      if (playerPosition > 150 && playerPosition < 800) {
+        gameArea.style.transform = `translateX(-${playerPosition - 150}px)`;
+      }
 
       // Check if the player has won
       if (playerDistance >= goal) {
