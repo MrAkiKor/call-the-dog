@@ -40,17 +40,22 @@
       background-repeat: no-repeat;
     }
     #player {
-      background-image: url('./player2.png');
+      background-image: url('./player.png');
       background-position: 0 0px; /* Start with the first frame */
       left: 0;
-      background-size: 300px;
+      height: 100px;
+      width: 70px;
+      background-size: 500px;
       transition: left 0.15s;
     }
     #ai {
   
-      background-image: url('./jeccu_test.png');
+      background-image: url('./dog.png');
       left: 0;
       bottom: 10px;
+    }
+    .drop-shadow {
+      box-shadow: 0 4px 2px -2px #00000b;
     }
     #instructions {
       margin-top: 10px;
@@ -68,16 +73,15 @@
     <div class="floor"></div>
     <section class="background">
     </section>
-    <div id="player" class="runner"></div>
-    <div id="ai" class="runner"></div>
+    <div id="player" class="runner drop-shadow"></div>
+    <div id="ai" class="runner drop-shadow"></div>
   </div>
 </div>
-<div id="distance">Player Distance: 0% | AI Distance: 0%</div>
+
 
 <script>
   const player = document.getElementById('player');
   const ai = document.getElementById('ai');
-  const distanceDisplay = document.getElementById('distance');
   const gameArea = document.getElementById('game-area');
   const gameContainer = document.getElementById('game-container');
   
@@ -89,7 +93,7 @@
   let isPaused = false; // Game starts unpaused
 
   // Sprite animation settings
-  const spriteWidth = 300 / 5; 
+  const spriteWidth = 500 / 5; 
   const aiSpriteWidth = 350 / 5; 
   const spriteHeight = 128;    // Height of each frame
   let currentFrame = 0;        // Current frame in the sprite sheet
@@ -103,7 +107,6 @@
       ai.style.left = `${aiDistance * 10.8}px`; // Convert to pixels for 1080px track
       currentAiFrame = (currentAiFrame + 1) % 5; // Cycle through frames 0 to 3
       ai.style.backgroundPosition = `-${currentAiFrame * aiSpriteWidth}px 0px`;
-      updateDistanceDisplay();
 
       // Check if AI won
       if (aiDistance >= goal) {
@@ -113,11 +116,6 @@
     }
   }
   
-  // Update the distance display
-  function updateDistanceDisplay() {
-    distanceDisplay.textContent = `Player Distance: ${Math.round(playerDistance)}% | AI Distance: ${Math.round(aiDistance)}%`;
-  }
-
   // Reset the game
   function resetGame() {
     playerDistance = 0;
@@ -125,7 +123,6 @@
     player.style.left = '0px';
     ai.style.left = '0px';
     gameArea.style.transform = 'translateX(0px)'; // Reset camera
-    updateDistanceDisplay();
     lastKey = '';
     isPaused = false;
     currentFrame = 0;
@@ -148,7 +145,6 @@
       lastKey = key;
       playerDistance += 1.2;
       player.style.left = `${playerDistance * 10.2}px`; // Update player position in pixels
-      updateDistanceDisplay();
 
       // Update the animation frame for the player
       currentFrame = (currentFrame + 1) % 4; // Cycle through frames 0 to 3
